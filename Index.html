@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Blindtest Mix</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f3f3f3;
+    color: #222;
+}
+
+header {
+    background: #222;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+header h1 {
+    margin: 0 0 8px;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 15px;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1);
+}
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+button {
+    border: none;
+    border-radius: 8px;
+    padding: 11px 16px;
+    font-size: 15px;
+    cursor: pointer;
+    margin: 4px;
+}
+
+.primary {
+    background: #35a853;
+    color: white;
+}
+
+.secondary {
+    background: #555;
+    color: white;
+}
+
+.danger {
+    background: #ea4335;
+    color: white;
+}
+
+.blue {
+    background: #4285f4;
+    color: white;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #ccc;
+    border-radius: 7px;
+    font-size: 15px;
+    margin-bottom: 10px;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.party {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 7px rgba(0,0,0,.1);
+    cursor: pointer;
+}
+
+.party-title {
+    font-size: 19px;
+    font-weight: bold;
+}
+
+.party-info {
+    color: #666;
+    margin-top: 6px;
+    font-size: 14px;
+}
+
+.lock {
+    font-size: 20px;
+}
+
+.round {
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    overflow: hidden;
+}
+
+.round-header {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.round-title {
+    font-size: 19px;
+    font-weight: bold;
+}
+
+.round-info {
+    color: #666;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.track {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.track:last-child {
+    border-bottom: none;
+}
+
+.track-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.track-name {
+    flex: 1;
+    font-weight: bold;
+}
+
+.track-controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.track-controls button {
+    background: #444;
+    color: white;
+    padding: 7px 10px;
+    margin: 0;
+}
+
+.volume {
+    width: 100px;
+}
+
+.video-toggle {
+    background: transparent !important;
+    color: #222 !important;
+    font-size: 20px;
+}
+
+.video {
+    display: none;
+    margin-top: 10px;
+}
+
+.video.visible {
+    display: block;
+}
+
+.player {
+    width: 100%;
+    height: 220px;
+}
+
+.empty {
+    text-align: center;
+    color: #777;
+    padding: 25px;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+@media(max-width:600px) {
+
+    .track-header {
+        flex-wrap: wrap;
+    }
+
+    .track-controls {
+        width: 100%;
+    }
+
+    .volume {
+        flex: 1;
+    }
+
+    .player {
+        height: 190px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🎵 Blindtest Mix</h1>
+    <p>Jusqu'à 7 chansons simultanément</p>
+</header>
+
+<div class="container">
+
+<!-- ================= ACCUEIL ================= -->
+
+<section id="homePage" class="page active">
+
+    <div class="card">
+
+        <button class="primary" onclick="showCreateParty()">
+            ➕ Créer une partie
+        </button>
+
+        <h2>Mes parties</h2>
+
+        <input
+            id="search"
+            type="text"
+            placeholder="🔎 Rechercher une partie..."
+            oninput="loadParties()"
+        >
+
+        <select id="creatorFilter" onchange="loadParties()">
+            <option value="">Tous les créateurs</option>
+        </select>
+
+        <div id="partiesList">
+            <div class="empty">Chargement...</div>
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= CREATION PARTIE ================= -->
+
+<section id="createPage" class="page">
+
+    <div class="card">
+
+        <h2>➕ Créer une partie</h2>
+
+        <label>Nom de la partie</label>
+
+        <input
+            id="partyName"
+            type="text"
+            placeholder="Ex : Blind test années 80"
+        >
+
+        <label>Créé par</label>
+
+        <input
+            id="partyCreator"
+            type="text"
+            placeholder="Ton prénom ou ton pseudo"
+        >
+
+        <label>
+            Mot de passe
+            <span style="color:#999;font-weight:normal;">
+                (facultatif)
+            </span>
+        </label>
+
+        <input
+            id="partyPassword"
+            type="password"
+            placeholder="Laisse vide si aucun mot de passe"
+        >
+
+        <label>
+            Adresse e-mail de récupération
+            <span style="color:#999;font-weight:normal;">
+                (facultatif)
+            </span>
+        </label>
+
+        <input
+            id="partyEmail"
+            type="email"
+            placeholder="Adresse e-mail"
+        >
+
+        <button class="primary" onclick="createParty()">
+            💾 Créer la partie
+        </button>
+
+        <button class="secondary" onclick="showHome()">
+            Annuler
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- ================= PARTIE ================= -->
+
+<section id="partyPage" class="page">
+
+    <div class="card">
+
+        <div class="actions">
+
+            <button class="secondary" onclick="showHome()">
+                ← Retour
+            </button>
+
+            <button class="primary" onclick="showCreateRound()">
+                ➕ Nouvelle manche
+            </button>
+
+            <button class="blue" onclick="playAll()">
+                ▶ Tout lire
+            </button>
+
+            <button class="danger" onclick="pauseAll()">
+                ⏸ Tout arrêter
+            </button>
+
+        </div>
+
+        <h2 id="partyTitle"></h2>
+
+        <div id="partyCreatorInfo" class="party-info"></div>
+
+        <div id="roundsList"></div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= CREATION MANCHE ================= -->
+
+<section id="roundPage" class="page">
+
+    <div class="card">
+
+        <h2>🎵 Nouvelle manche</h2>
+
+        <label>Nom de la manche</label>
+
+        <input
+            id="roundName"
+            type="text"
+            placeholder="Ex : Années 2000"
+        >
+
+        <p>
+            Tu peux utiliser entre 1 et 7 pistes.
+            Les emplacements laissés vides ne seront pas enregistrés.
+        </p>
+
+        <div id="trackEditors"></div>
+
+        <button class="primary" onclick="saveRound()">
+            💾 Enregistrer la manche
+        </button>
+
+        <button class="secondary" onclick="showParty(currentPartyId)">
+            Annuler
+        </button>
+
+    </div>
+
+</section>
+
+</div>
+
+
+<script src="https://www.youtube.com/iframe_api"></script>
+
+<script>
+
+/* =========================================================
+   SUPABASE
+   ========================================================= */
+
+const SUPABASE_URL =
+"https://diadsbsxgzravpiekbhs.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_A67YJDLTmbx_EAsCW7-b1g_57hL5FZV";
+
+const supabaseClient =
+window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+
+/* =========================================================
+   VARIABLES
+   ========================================================= */
+
+let currentPartyId = null;
+
+let players = [];
+
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+function showPage(id) {
+
+    document
+        .querySelectorAll(".page")
+        .forEach(page => {
+            page.classList.remove("active");
+        });
+
+    document
+        .getElementById(id)
+        .classList.add("active");
+}
+
+
+function showHome() {
+
+    destroyPlayers();
+
+    currentPartyId = null;
+
+    showPage("homePage");
+
+    loadCreators();
+
+    loadParties();
+}
+
+
+function showCreateParty() {
+
+    document.getElementById("partyName").value = "";
+    document.getElementById("partyCreator").value = "";
+    document.getElementById("partyPassword").value = "";
+    document.getElementById("partyEmail").value = "";
+
+    showPage("createPage");
+}
+
+
+/* =========================================================
+   CREER UNE PARTIE
+   ========================================================= */
+
+async function createParty() {
+
+    const name =
+        document.getElementById("partyName")
+        .value.trim();
+
+    const creator =
+        document.getElementById("partyCreator")
+        .value.trim();
+
+    const password =
+        document.getElementById("partyPassword")
+        .value;
+
+    const email =
+        document.getElementById("partyEmail")
+        .value.trim();
+
+
+    if (!name || !creator) {
+
+        alert(
+            "Merci de renseigner le nom de la partie et le créateur."
+        );
+
+        return;
+    }
+
+
+    const { data, error } =
+        await supabaseClient.rpc(
+            "creer_partie",
+            {
+                p_nom: name,
+                p_createur: creator,
+                p_mot_de_passe: password,
+                p_email_recuperation: email
+            }
+        );
+
+
+    if (error) {
+
+        console.error(error);
+
+        alert(
+            "Erreur lors de la création :\n" +
+            error.message
+        );
+
+        return;
+    }
+
+
+    currentPartyId = data;
+
+    alert("✅ Partie créée !");
+
+    showParty(currentPartyId);
+}
+
+
+/* =========================================================
+   CHARGER LES PARTIES
+   ========================================================= */
+
+async function loadParties() {
+
+    const search =
+        document.getElementById("search")
+        ?.value.trim() || "";
+
+    const creator =
+        document.getElementById("creatorFilter")
+        ?.value || "";
+
+
+    const { data, error } =
+        await supabaseClient.rpc(
+            "lister_parties",
+            {
+                recherche: search,
+                filtre_createur: creator
+            }
+        );
+
+
+    const list =
+        document.getElementById("partiesList");
+
+
+    if (error) {
+
+        console.error(error);
+
+        list.innerHTML =
+            `<div class="empty">
+                Impossible de charger les parties.
+            </div>`;
+
+        return;
+    }
+
+
+    if (!data || data.length === 0) {
+
+        list.innerHTML =
+            `<div class="empty">
+                Aucune partie trouvée.
+            </div>`;
+
+        return;
+    }
+
+
+    list.innerHTML = "";
+
+
+    data.forEach(party => {
+
+        const div =
+            document.createElement("div");
+
+        div.className = "party";
+
+
+        const lock =
+            party.protegee
+            ? " 🔒"
+            : "";
+
+
+        div.innerHTML = `
+
+            <div class="party-title">
+                ${escapeHtml(party.nom)}
+                ${lock}
+            </div>
+
+            <div class="party-info">
+                Créé par
+                <strong>
+                    ${escapeHtml(party.createur)}
+                </strong>
+            </div>
+
+        `;
+
+
+        div.onclick =
+            () => openParty(party);
+
+
+        list.appendChild(div);
+
+    });
+
+}
+
+
+/* =========================================================
+   FILTRE CREATEURS
+   ========================================================= */
+
+async function loadCreators() {
+
+    const select =
+        document.getElementById("creatorFilter");
+
+    if (!select) return;
+
+
+    const { data, error } =
+        await supabaseClient.rpc(
+            "lister_parties",
+            {
+                recherche: "",
+                filtre_createur: ""
+            }
+        );
+
+
+    if (error || !data) return;
+
+
+    const creators =
+        [...new Set(
+            data.map(p => p.createur)
+        )];
+
+
+    select.innerHTML =
+        `<option value="">
+            Tous les créateurs
+        </option>`;
+
+
+    creators
+        .sort()
+        .forEach(creator => {
+
+            const option =
+                document.createElement("option");
+
+            option.value = creator;
+
+            option.textContent = creator;
+
+            select.appendChild(option);
+
+        });
+
+}
+
+
+/* =========================================================
+   OUVRIR UNE PARTIE
+   ========================================================= */
+
+async function openParty(party) {
+
+    let password = "";
+
+
+    if (party.protegee) {
+
+        password =
+            prompt(
+                "🔒 Cette partie est protégée.\n\nMot de passe :"
+            );
+
+
+        if (password === null) return;
+
+
+        const { data, error } =
+            await supabaseClient.rpc(
+                "verifier_mot_de_passe",
+                {
+                    p_partie_id: party.id,
+                    p_mot_de_passe: password
+                }
+            );
+
+
+        if (error || !data) {
+
+            alert("❌ Mot de passe incorrect.");
+
+            return;
+        }
+    }
+
+
+    showParty(
+        party.id,
+        password
+    );
+}
+
+
+/* =========================================================
+   AFFICHER UNE PARTIE
+   ========================================================= */
+
+async function showParty(
+    partyId,
+    password = ""
+) {
+
+    destroyPlayers();
+
+    currentPartyId = partyId;
+
+
+    const { data, error } =
+        await supabaseClient.rpc(
+            "charger_partie",
+            {
+                p_partie_id: partyId,
+                p_mot_de_passe: password
+            }
+        );
+
+
+    if (error) {
+
+        console.error(error);
+
+        alert(
+            "Impossible de charger cette partie :\n" +
+            error.message
+        );
+
+        return;
+    }
+
+
+    displayParty(data);
+
+}
+
+
+/* =========================================================
+   AFFICHAGE PARTIE
+   ========================================================= */
+
+function displayParty(data) {
+
+    if (!data || data.length === 0) {
+
+        alert("Cette partie ne contient encore aucune manche.");
+
+        showPage("partyPage");
+
+        return;
+    }
+
+
+    const first = data[0];
+
+
+    document.getElementById("partyTitle")
+        .textContent =
+        "🎵 " + first.partie_nom;
+
+
+    document.getElementById("partyCreatorInfo")
+        .textContent =
+        "Créé par " + first.createur;
+
+
+    const rounds = {};
+
+
+    data.forEach(row => {
+
+        if (!row.manche_id) return;
+
+
+        if (!rounds[row.manche_id]) {
+
+            rounds[row.manche_id] = {
+
+                id: row.manche_id,
+
+                nom: row.manche_nom,
+
+                ordre: row.manche_ordre,
+
+                tracks: []
+
+            };
+        }
+
+
+        if (row.musique_id) {
+
+            rounds[row.manche_id]
+                .tracks
+                .push({
+
+                    id: row.musique_id,
+
+                    numero: row.musique_numero,
+
+                    nom: row.musique_nom,
+
+                    url: row.youtube_url
+
+                });
+
+        }
+
+    });
+
+
+    const list =
+        document.getElementById("roundsList");
+
+    list.innerHTML = "";
+
+
+    Object
+        .values(rounds)
+        .sort((a,b) => a.ordre - b.ordre)
+        .forEach(round => {
+
+            renderRound(round, list);
+
+        });
+
+
+    showPage("partyPage");
+
+}
+
+
+/* =========================================================
+   AFFICHER UNE MANCHE
+   ========================================================= */
+
+function renderRound(
+    round,
+    container
+) {
+
+    const div =
+        document.createElement("div");
+
+    div.className = "round";
+
+
+    const count =
+        round.tracks.length;
+
+
+    const countText =
+        count === 1
+        ? "1 piste dans cette manche"
+        : count + " pistes dans cette manche";
+
+
+    div.innerHTML = `
+
+        <div class="round-header">
+
+            <div class="round-title">
+                🎵 ${escapeHtml(round.nom)}
+            </div>
+
+            <div class="round-info">
+                ${countText}
+            </div>
+
+        </div>
+
+    `;
+
+
+    round.tracks
+        .sort((a,b) => a.numero - b.numero)
+        .forEach(track => {
+
+            div.appendChild(
+                createTrack(track)
+            );
+
+        });
+
+
+    container.appendChild(div);
+
+}
+
+
+/* =========================================================
+   CREER UNE PISTE
+   ========================================================= */
+
+function createTrack(track) {
+
+    const div =
+        document.createElement("div");
+
+    div.className = "track";
+
+
+    div.innerHTML = `
+
+        <div class="track-header">
+
+            <div class="track-name">
+                🎵 ${escapeHtml(track.nom)}
+            </div>
+
+            <div class="track-controls">
+
+                <button
+                    onclick="playTrack('${track.id}')"
+                >
+                    ▶
+                </button>
+
+                <button
+                    onclick="pauseTrack('${track.id}')"
+                >
+                    ⏸
+                </button>
+
+                <span>🔊</span>
+
+                <input
+                    class="volume"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="100"
+                    oninput="
+                        changeVolume(
+                            '${track.id}',
+                            this.value
+                        )
+                    "
+                >
+
+                <button
+                    class="video-toggle"
+                    id="arrow-${track.id}"
+                    onclick="
+                        toggleVideo('${track.id}')
+                    "
+                >
+                    ▾
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div
+            class="video"
+            id="video-${track.id}"
+        >
+
+            <div
+                class="player"
+                id="player-${track.id}"
+            ></div>
+
+        </div>
+
+    `;
+
+
+    createYoutubePlayer(track);
+
+
+    return div;
+}
+
+
+/* =========================================================
+   YOUTUBE
+   ========================================================= */
+
+function getVideoId(url) {
+
+    try {
+
+        const u =
+            new URL(url);
+
+
+        if (
+            u.hostname.includes("youtube.com")
+        ) {
+
+            return u.searchParams.get("v");
+
+        }
+
+
+        if (
+            u.hostname.includes("youtu.be")
+        ) {
+
+            return u.pathname.substring(1);
+
+        }
+
+    } catch(e) {
+
+        return null;
+
+    }
+
+
+    return null;
+}
+
+
+function createYoutubePlayer(track) {
+
+    if (
+        typeof YT === "undefined" ||
+        !YT.Player
+    ) {
+
+        setTimeout(
+            () => createYoutubePlayer(track),
+            500
+        );
+
+        return;
+    }
+
+
+    const videoId =
+        getVideoId(track.url);
+
+
+    if (!videoId) return;
+
+
+    const player =
+        new YT.Player(
+            "player-" + track.id,
+            {
+
+                videoId: videoId,
+
+                playerVars: {
+
+                    autoplay: 0,
+
+                    controls: 1,
+
+                    rel: 0
+
+                },
+
+                events: {
+
+                    onReady: event => {
+
+                        event.target.setVolume(100);
+
+                    }
+
+                }
+
+            }
+        );
+
+
+    players.push({
+
+        id: track.id,
+
+        player: player
+
+    });
+
+}
+
+
+/* =========================================================
+   VIDEO OUVRIR / FERMER
+   ========================================================= */
+
+function toggleVideo(id) {
+
+    const video =
+        document.getElementById(
+            "video-" + id
+        );
+
+    const arrow =
+        document.getElementById(
+            "arrow-" + id
+        );
+
+
+    if (
+        video.classList.contains("visible")
+    ) {
+
+        video.classList.remove("visible");
+
+        arrow.textContent = "▾";
+
+    } else {
+
+        video.classList.add("visible");
+
+        arrow.textContent = "▴";
+
+    }
+
+}
+
+
+/* =========================================================
+   LECTEUR
+   ========================================================= */
+
+function findPlayer(id) {
+
+    const item =
+        players.find(
+            p => p.id === id
+        );
+
+
+    return item
+        ? item.player
+        : null;
+}
+
+
+function playTrack(id) {
+
+    const player =
+        findPlayer(id);
+
+    if (player) {
+
+        player.playVideo();
+
+    }
+
+}
+
+
+function pauseTrack(id) {
+
+    const player =
+        findPlayer(id);
+
+    if (player) {
+
+        player.pauseVideo();
+
+    }
+
+}
+
+
+function changeVolume(
+    id,
+    volume
+) {
+
+    const player =
+        findPlayer(id);
+
+    if (player) {
+
+        player.setVolume(
+            Number(volume)
+        );
+
+    }
+
+}
+
+
+function playAll() {
+
+    players.forEach(item => {
+
+        if (
+            item &&
+            item.player
+        ) {
+
+            item.player.playVideo();
+
+        }
+
+    });
+
+}
+
+
+function pauseAll() {
+
+    players.forEach(item => {
+
+        if (
+            item &&
+            item.player
+        ) {
+
+            item.player.pauseVideo();
+
+        }
+
+    });
+
+}
+
+
+function destroyPlayers() {
+
+    players.forEach(item => {
+
+        try {
+
+            if (
+                item &&
+                item.player
+            ) {
+
+                item.player.destroy();
+
+            }
+
+        } catch(e) {}
+
+    });
+
+
+    players = [];
+
+}
+
+
+/* =========================================================
+   CREATION MANCHE
+   ========================================================= */
+
+function showCreateRound() {
+
+    document.getElementById("roundName").value = "";
+
+    const container =
+        document.getElementById(
+            "trackEditors"
+        );
+
+
+    container.innerHTML = "";
+
+
+    for (
+        let i = 1;
+        i <= 7;
+        i++
+    ) {
+
+        const div =
+            document.createElement("div");
+
+        div.className = "card";
+
+
+        div.innerHTML = `
+
+            <strong>🎵 Piste ${i}</strong>
+
+            <label>
+                Nom à afficher
+            </label>
+
+            <input
+                class="trackName"
+                data-number="${i}"
+                type="text"
+                placeholder="Ex : Michael Jackson"
+            >
+
+            <label>
+                Lien YouTube
+            </label>
+
+            <input
+                class="trackUrl"
+                data-number="${i}"
+                type="text"
+                placeholder="Colle ici le lien YouTube"
+            >
+
+        `;
+
+
+        container.appendChild(div);
+
+    }
+
+
+    showPage("roundPage");
+
+}
+
+
+/* =========================================================
+   SAUVEGARDE MANCHE
+   ========================================================= */
+
+async function saveRound() {
+
+    const name =
+        document.getElementById("roundName")
+        .value.trim();
+
+
+    if (!name) {
+
+        alert(
+            "Merci de donner un nom à la manche."
+        );
+
+        return;
+    }
+
+
+    const result =
+        await supabaseClient.rpc(
+            "creer_manche",
+            {
+                p_partie_id: currentPartyId,
+                p_nom: name,
+                p_ordre: Date.now(),
+                p_mot_de_passe: ""
+            }
+        );
+
+
+    if (result.error) {
+
+        console.error(result.error);
+
+        alert(
+            "Erreur :\n" +
+            result.error.message
+        );
+
+        return;
+    }
+
+
+    const mancheId =
+        result.data;
+
+
+    const names =
+        document.querySelectorAll(
+            ".trackName"
+        );
+
+
+    const urls =
+        document.querySelectorAll(
+            ".trackUrl"
+        );
+
+
+    let count = 0;
+
+
+    for (
+        let i = 0;
+        i < 7;
+        i++
+    ) {
+
+        const nom =
+            names[i].value.trim();
+
+        const url =
+            urls[i].value.trim();
+
+
+        if (!nom || !url) continue;
+
+
+        const result =
+            await supabaseClient.rpc(
+                "enregistrer_musique",
+                {
+
+                    p_manche_id: mancheId,
+
+                    p_numero: i + 1,
+
+                    p_nom: nom,
+
+                    p_youtube_url: url,
+
+                    p_mot_de_passe: ""
+
+                }
+            );
+
+
+        if (result.error) {
+
+            console.error(result.error);
+
+            alert(
+                "Erreur sur la piste " +
+                (i + 1) +
+                " :\n" +
+                result.error.message
+            );
+
+            return;
+        }
+
+
+        count++;
+
+    }
+
+
+    alert(
+        "✅ Manche enregistrée !\n\n" +
+        count +
+        (
+            count > 1
+            ? " pistes ont été enregistrées."
+            : " piste a été enregistrée."
+        )
+    );
+
+
+    showParty(currentPartyId);
+
+}
+
+
+/* =========================================================
+   SECURITE AFFICHAGE
+   ========================================================= */
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+
+}
+
+
+/* =========================================================
+   DEMARRAGE
+   ========================================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        loadCreators();
+
+        loadParties();
+
+    }
+);
+
+</script>
+
+</body>
+</html>
